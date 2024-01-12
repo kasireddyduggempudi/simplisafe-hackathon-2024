@@ -1,0 +1,31 @@
+dex
+
+About dexWhy do we need dex/EKS?
+
+On this page
+
+Why do we need dex/EKS?
+
+Empowerment and operational maturity
+
+Historically at SimpliSafe, teams haven't had have end-to-end ownership of their own deployment and operations. For security reasons, their access to the legacy shared AWS account has been limited, their understanding of the pipelines they use is low, and they're forced to depend on the Cloud Engineering team for basic troubleshooting and architectural improvements.
+
+This leaves them less likely to drive towards optimal DevOps practices (e.g. continuous deployment, continuous improvement, observability, SLOs, and other SRE tools), and customer experience has suffered as a result.
+
+The dex/EKS is designed from the ground up to be used in our federated AWS team accounts, which empowers teams to fully own their own services, from development to production. With the ability to fully own and operate services, teams will be able to rapidly iterate, continuously improve, and develop the operational maturity that will lead to better reliability and faster feature development.
+
+Encapsulate the best tools and best practices
+
+Many of our key services use legacy deployment and operational tools which, because of lack of investment and years of hacks and divergent evolution, have become overly complex, risky, error-prone, and lacking in modern features for reliability, resilience, observability, and testing. This is significantly impacting speed of customer value delivery.
+
+The dex/EKS platform encapsulates hard-won knowledge from across many teams across SimpliSafe, and implements best-practices by default, including security, reliability, observability, testing, and developer experience. And because it has been so widely adopted across teams, and is built using a product-driven, internal-open-source model, its value grows with each feature added.
+
+Because dex/EKS is built on Kubernetes, it also brings the power of the entire cloud-native open-source community and ecosystem. This provides a rich source from which to rapidly add battle-tested features to the platform, making them available for all teams at once.
+
+Lowering the burden of distributed systems
+
+The inherent complexity of building, maintaining, and operating a fleet of microservices in the cloud is huge, making it very hard for teams to make progress on business goals.
+
+dex/EKS provides a set of developer-oriented abstractions that are drastically simpler than the underlying complexity of the APIs they abstract (e.g. AWS, Kubernetes), while still allowing teams to drop down to a lower level to support rare edge cases. With dex/EKS, all apps are built, deployed, and operated in a consistent way, so knowledge can be re-used across projects, and even teams.
+
+And because of the powerful abstractions provided by Kubernetes' API, it's now possible to effectively separate application concerns from operator concerns. This allows Cloud Engineering to move infrastructure forward (e.g. implement security, cost-savings, backup, observability, resilience features) without requiring any significant effort from teams.

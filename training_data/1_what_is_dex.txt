@@ -1,0 +1,34 @@
+What is dex?
+dex is an internal-open-source CLI tool and library designed to enable SimpliSafe cloud software teams to build, deploy, and operate microservices (or front-ends) more quickly, reliably, and cheaply than they can today.
+
+integrations
+
+dex encapsulates SimpliSafe's opinions, policies, and best-practices for building, deploying, and operating apps. You can think of it as a PaaS (“platform as a service”) that helps glue together all of SimpliSafe's chosen infrastructure, including:
+
+AWS IAM
+Docker
+Kubernetes (AWS EKS)
+nginx-ingress
+AWS SSM Parameter Store
+AWS ECR
+Artifactory
+Github Actions
+Telegraf
+Grafana
+OpenTelemetry
+dex integrates all these systems, and provides a consistent, simple (and hopefully fun) interface that's designed to allow developers to focus on business problems instead of infrastructure and plumbing.
+
+No, I mean, what is it specifically?
+dx CLI
+dx is a CLI tool that you install globally. It doesn't have many features other:
+
+install/upgrade the dex library in your project
+invoke the entrypoint defined in the dex library in your project and pass it commands/arguments.
+dx doesn't change often, and is designed to be broadly compatible as the dex library evolves.
+
+dex library
+You use dx to install a dex subdirectory into your project. This subdirectory contains an npm package (i.e. with a package.json) that references a specific version of the @simplidevops/dex npm package. This version goes into the package-lock.json, and is locked at that version until you explicitly upgrade it.
+
+This project-in-a-subdirectory allows you to write arbitrary, project-specific build/deploy actions in TypeScript (e.g. project-defined commands) using the full power of the @simplidevops/dex package and all of its APIs.
+
+Since it's a subdirectory with its own package.json, the dex npm package and its dependencies are completely independent from that of your project (if you're even using node.js/npm).

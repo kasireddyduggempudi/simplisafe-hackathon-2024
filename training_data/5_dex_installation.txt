@@ -1,0 +1,91 @@
+dex
+
+Installation
+
+On this page
+
+Installation
+
+Prerequisites
+
+Prerequisite tools
+
+dex requires a few prerequisites:
+
+bash 4+ or zsh
+
+node.js 12+ (including npm, npx): brew install node
+
+kubectl: brew install kubectl
+
+Docker
+
+In Docker Desktop settings, enable Docker Compose V2
+
+aws CLI version 2
+
+The saml-aws-auth credential helper we use to authenticate to AWS with Okta.
+
+TIP
+
+You don't need to configure AWS profiles to use dex, only ensure that you have saml-aws-auth installed.
+
+If saml-aws-auth is installed at the default location by brew (/Applications/saml-aws-auth.app/Contents/MacOS/saml-aws-auth), dex will use it without any further configuration. If you've installed it anywhere else, you can customize the location dex uses in your dexrc file.
+
+EKS cluster
+
+To use dex, your team's AWS accounts must have had an EKS cluster provisioned. This can be done easily, via self-service, by doing a simple PR to our EKS clusters repo.
+
+Required access
+
+You must have VPN access configured
+
+AWS authentication must be configured for any AWS accounts you'll be using. Talk with your team lead about which accounts/roles you need access to, and submit an IT ticket to get access via Okta.
+
+Install dx
+
+INFO
+
+You must be on the VPN to install dx and dex!
+
+To install dx (dex's command line app), run the following one-liner:
+
+sudo curl --fail https://artifactory.tools.simplisafe.com/artifactory/devops-generic/dx/latest -o /usr/local/bin/dx && sudo chmod +x /usr/local/bin/dx && dx -v
+
+TIP
+
+You don't need to install dx to /usr/local/bin: anywhere on your PATH is fine. For example, if you prefer ~/.local/bin:
+
+curl --fail https://artifactory.tools.simplisafe.com/artifactory/devops-generic/dx/latest -o ~/.local/bin/dx && chmod +x ~/.local/bin/dx && dx -v
+
+Install shell auto-completion
+
+It's really nice to use dx with shell auto-completion- you can type the first couple letters of a command, press tab, and the command will auto-complete. dx can install auto-completion for you:
+
+dx install-completion
+
+Then restart your shell (or just reload your shell profile, e.g. . ~/.bashrc).
+
+CAUTION
+
+If you're using zsh, and you get the following error:
+
+/Users/{yourname}/.dx-zsh-completion.sh:16: command not found: compdef
+
+You need to enable "compdef" by adding the following lines to the beginning of your ~/.zshrc:
+
+autoload -Uz compinit
+
+compinit
+
+Install dex into a project
+
+TIP
+
+If you haven't used installed dex in a project before, you may want to check out the Quickstart guide first.
+
+Change directories into your target project.
+
+Install dex in the project with dx install-dex
+
+Run dx scaffold

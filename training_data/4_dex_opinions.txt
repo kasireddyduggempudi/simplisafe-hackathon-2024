@@ -1,0 +1,23 @@
+dex
+
+About dexOpinions
+
+Opinions
+
+Here's the opinions that dex is built on:
+
+DevOps philosophy: empowerment & accountability: Teams should operate the systems they build, which maximizes the feedback loop which incentivizes teams to build robust and resilient software. Teams need sufficient tools, permissions, and access to self-service, troubleshoot, or debug any infrastructure running their code.
+
+Container and Kubernetes abstractions: Containers and the Kubernetes API provide a powerful abstraction between developers and operators. They allow operations teams to standardize infrastructure, which can be highly sophisticated and optimized, while supporting any containerized workload. Developers are free to choose the tools, languages, and platforms that work best for them, and can use the power of the Kubernetes API and ecosystem to compose their app's structure.
+
+Simplicity and flexibility: A deployment system should be transparent, simple, granular, and modifiable. It should be composed of small, single purpose utilities that can be easily swapped out.
+
+Sane defaults, but modifiable: Good CI/CD tooling should provide a default configuration that works well out-of-the box, but that teams can break out of as needed.
+
+Per-project isolation: In the microservices methodology, CI/CD pipelines should be isolated, per project. Developers should never fear that changing the build or deployment properties of one project could break any other.
+
+Run anything locally: All build and deployment scripts should be runnable (and testable) on a laptop, not only on a CI server. The CI/CD system integration should be a very thin wrapper on top of a set of full-featured tools, serving only to glue externalities (like AWS credentials or GitHub repos).
+
+12 Factor apps: Apps should be built using the 12-factor app methodology. Apps should be disposable instances, release artifacts should be immutable, configuration should be supplied as environment variables or files on mounted volumes, logs should be written to stdout/stderr, dependencies should be isolated, etc.
+
+Infrastructure and configuration as code: App configuration and infrastructure should be defined in code, which is committed to your git repo (which is versioned, reviewed, and auditable) instead of point-and-click systems.

@@ -1,0 +1,36 @@
+﻿This document outlines a step-by-step guide for deploying the X-Wing application across different environments—QA, STG, and PRD. It provides detailed instructions for merging a pull request (PR) in the support_tools GitHub repository, retrieving the SHA for deployment, and initiating the deployment process through the GoCD application.
+GitHub Repository - support_tools :
+1. Navigate to the GitHub repository support_tools.
+2. Click on the top bar displaying all commits (e.g., 576 commits in the screenshot).
+3. Access the commits page to identify the latest merge commit.
+4. Copy the SHA of the merged branch for further reference.
+GoCD Deployment:
+Ensure access to the GoCD application via the Okta portal.
+Deployment Steps:
+ 
+PRD Environment:
+1. Access prd_xwing_deploy on the GoCD dashboard.
+2. Click on the PlayPlus button.
+3. It will display pop-up dialog which are attached below. In the first image, the Revision to trigger with offers a drop-down menu with the 5 most recent commits in the tf-xwing GitHub repo.  You must enter the most recent commit hash from the tf-xwing repo, either by choosing it from the drop-down menu, or by entering the hash manually into the text box.  (You can verify the most recent commit in that repo’s commits page here.) Failure to choose the most recent commit from tf-xwing may cause some users to be blocked from accessing the Xwing application.
+In the same dialog box, click the Environment Variables tab, as shown in the 2nd screenshot below.  You will paste the copied github SHA from support-tools repo of merged branch.
+3. If you are not able to find the latest git hash for terraform-xwing in the dropdown, then you can refer to github repo of tf-xwing to verify the hash and pick that accordingly.
+4. After verifying all the details, now click on Trigger Pipeline for deployment.
+QA Environment:
+1. Open the GoCD dashboard and locate qa_xwing_deploy.
+2. Click on the PlayPlus button..
+3. Now follow the same steps as above
+STG Environment:
+1. Navigate to stg_xwing_deploy on the GoCD dashboard.
+2. Click on the PlayPlus button.
+3. Now follow the same steps as above.
+Verification Process:
+1. Begin by deploying the code in QA.
+2. Verify changes in the QA environment.
+3. Move to STG, deploy the code, and verify changes.
+4. Proceed to PRD for the final deployment after successful QA and STG verifications.
+Post-Deployment Steps:
+1. After PRD deployment completion, open the prd_xwing_pipeline and verify the latest git hash which has been deployed.
+2. The latest commit will be of the tf-xwing repo which you can check in commits master.
+ 
+IMP NOTE: It is very important that you pick the latest git hash of terraform xwing for deployment as it will update all the Global whitelisted IPs present in the the repo.
+Note: Ensure thorough verification at each environment before progressing to the next stage.

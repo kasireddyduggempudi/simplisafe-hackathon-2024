@@ -1,0 +1,16 @@
+﻿This guide is here to help you easily get started and work smoothly in our DCT project. Brief description about DCT and Repos is mentioned here.
+Access
+* Request access for Commercetools, Contentful from Lumos via Okta Tile
+* Request access for ecomm-qa-poweruser in AWS through Lumos
+* Request access for Orders Manager and Orders Administrator in #support-auth0 slack channel. Make sure you ask for d2ct role too. Without this role, the new React application in Drupal will not be visible
+Github Repos
+1. Before proceeding, ensure Drupal is running locally. Follow the steps in the provided document to set up Drupal locally.
+2. Clone the eis-orders-frontend repo. Follow the instructions in the README file to set up the project locally.
+3. Once both steps above are completed, run the eis-orders-frontend project. Refresh the local Drupal CRM and start creating a new order.
+Repos Setup
+1. eis-orders
+   1. Setup this repo by following the steps in the README file.
+2. the-first-order
+   1. The default QA environment file in the repository will connect to the QA Drupal instance and the "simplisafe-dev-1" Commercetools project (our QA environment) when operating on your localhost.
+   2. Some errors leaving comments are normal, as the generated order_id may not exist in the QA environment.
+   3. To overcome this, run the-first-order locally and point your React frontend environment at it: REACT_APP_ORDERS_API_BASE_URL=http://localhost:3093

@@ -1,0 +1,59 @@
+dex
+
+About dexFeatures
+
+Features
+
+Commands: dex provides a number of built-in commands that can be composed into a CI/CD pipeline. This includes commands like build (build your Dockerfile), push (push your image to ECR), deploy (deploy your app to Kubernetes), etc.
+
+Project-defined commands: In dex, you can define your own commands (or override dex's built-in commands) as a file with a single TypeScript function. All the same TypeScript APIs that dex uses for its built-in commands are available for custom commands. This is how you would implement project-specific pipeline steps (i.e. integration tests, building non-container artifacts, etc).
+
+Configuration: dex provides a highly flexible, platform-independent configuration system to manage environment-specific config properties (as code).
+
+Secrets: dex supports AWS Parameter Store secrets via its configuration system. Configuration values can contain references to secrets, and dex will take care of resolving them transparently, so your application doesn't need to know the difference between a secret and any other config value. This supports both secrets used via dex at build/deploy-time (e.g. an Artifactory API key) as well as runtime secrets used by your app at runtime (e.g. database credentials).
+
+Scaffolding: After answering a few questions about your project via a CLI-based survey, dex can generate all the boilerplate needed for a new project, including config files, Kubernetes manifests, commands, a Dockerfile and .dockerignore, etc.
+
+AWS integration:
+
+User authentication: dex takes care of the details of authenticating using your AWS SAML roles, including systems that you access via non-AWS tools, such as ECR repos (via the docker CLI) and EKS clusters (via kubectl or other Kubernetes ecosystem tools).
+
+IAM integration: dex will automatically create IAM roles and policies for your app to use at runtime, using least privilege configurations by default. dex takes care of all the details around bridging the worlds of Kubernetes and IAM, so your Kubernetes apps can use role-based authorization to access AWS services.
+
+ECR integration: dex takes care of creating (and authenticating your docker client to) ECR repos seamlessly as part of its docker.push() TypeScript API and built-in push command.
+
+Kubernetes integration: dex is designed to provide a thin layer of value-added features on top Kubernetes, giving teams the full power of the Kubernetes API and ecosystem (which has far richer capabilities than ECS). dex is also specifically designed take full advantage of the DevOps team's managed EKS clusters, and can make many simplifying assumptions as a result. dex's Kubernetes features includes:
+
+Manifest templates: dex has a simple templating system that enables you to create environment-independent, parameterized, Kubernetes manifest files (using the native Kubernetes manifest YAML format).
+
+Default manifests: The manifests provided by scaffolding are optimized for resiliency, utilizing built-in features of Kubernetes (i.e. Deployments to support rolling releases and rapid rollback, health-checks, load-balancing, auto-scaling, etc).
+
+Automatic debugging help: dex can automatically debug failed deployments, using an automated version of the manual steps an experienced Kubernetes user would perform to troubleshoot. For each of the steps, dex prints context along with the kubectl commands involved, so that developers can learn debugging skills.
+
+Manifest transformers: dex has a pipeline of manifest "transformers" that take care of injecting cross-cutting boilerplate into your manifests when they're deployed. This includes things like injecting init-containers to load secrets, creating IAM-linked service accounts, tagging objects with metadata, adding cache-busting annotations, etc.
+
+DNS and Certs: Apps launched in our managed EKS clusters can use the pre-configured Ingress controllers to handle DNS and TLS certs automatically. Apps get a unique public (or internal) hostname, and are accessible instantly after deployment.
+
+Ephemeral environments: dex is designed around the idea of ephemeral environments, which can be instantly created/destroyed, and are automatically cleaned up after a configurable number of days. This allows you to do things like:
+
+launch a running app for every feature branch build
+
+launch a test target environment for integration testing in a CI/CD pipeline
+
+launch a running app from a developer laptop to test out code in a prod-like environment
+
+Integration testing support: dex provides TypeScript APIs to execute integration tests as pods in Kubernetes, using an ephemeral instance of your application as the test subject. This eliminates the need to maintain separate configurations for Docker Compose vs ECS, etc, and allows you to utilize any test framework that can run in a container.
+
+Immutable artifacts: dex builds an environment-independent, immutable artifact (called a kubepack), which can be promoted between environments (either automatically or manually). These artifacts allow you to deploy without needing access to the original git repo, or requiring any of the original build-time dependencies.
+
+GoCD integration: dex is designed so it can be used on any CI/CD platform, and has no hard dependencies on GoCD. That said, we've created a set GoCD specific integrations, including a agent image (with dex's dependencies installed), example pipelines, templates, and a TypeScript API which encapsulates GoCD-specific environment variables.
+
+Observability: apps built using dex are automatically configured to be observable. This includes:
+
+metrics via Telegraf and InfluxDB
+
+Logging via DevOps managed ELK stack
+
+Tracing via OpenTelemetry and Jaeger
+
+Installation and versioning: dex's CLI is installed globally, and can install (or upgrade) the dex library into any project with a single command. The dex library version is locked (via a standard npm package-lock.json), which ensures that the version of dex is controlled by a file in git.

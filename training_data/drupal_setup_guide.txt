@@ -1,0 +1,44 @@
+﻿Prerequisite:
+* Install Docker
+Major Steps :
+* Follow the setup instructions from the dev_setup repository.
+* Add host entries to your /etc/hosts file:
+127.0.0.1 local.simplisafe.com
+* * 127.0.0.1 local.simplisafe.co.uk
+* Setup & Init your AWS profile for Docker Login
+* AWS_PROFILE=ops-qa-service-01-saml-admin aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 610626586058.dkr.ecr.us-east-1.amazonaws.com
+      replace ops-qa-services-01-saml-admin with your ~/.aws/config AWS_PROFILE.
+
+* Docker Pull Mysql Docker-Image
+* docker pull 610626586058.dkr.ecr.us-east-1.amazonaws.com/ops_mysql_dev:latest
+* cd simplisafe.com (repo) & run below contractor cmd
+docker-compose -f docker-compose.contractor.yml up -d
+* 
+
+* if above cmd fails due to permission issue run this instead :
+* 
+
+* * sudo docker-compose -f docker-compose.contractor.yml up -d ( use this above one fails due to permission issue)
+* Check logs if Drupal is running :
+* docker-compose logs -f drupal
+* Now open https://local.simplisafe.com/
+Common Errors :
+1. Verify If Container/docker is running fine
+
+
+2. If Web is coming blank on https://local.simplisafe.com/  or getting autoload.php type of error/msg
+try below steps
+docker exec -e COLUMNS="`tput cols`" -e LINES="`tput lines`" -ti drupal bash (basically SSH to local Docker Container)
+   3. cd /var/www/simplisafe.com 
+   4. composer install
+   5.    6. (exit the bash console & try now!!)
+   7. If getting mysql.inc or any kind of SQL error  then Check MariadDB Container IPAddress
+in this case it’s : 172.20.0.6
+
+
+And Set settings.php  as below :
+$db_url['default'] = 'custommysql://root:@172.20.0.6/simplisafe_DEV';
+      4. If Setting up New Api Call (not related to setup)
+docker exec -e COLUMNS="`tput cols`" -e LINES="`tput lines`" -ti drupal bash (basically SSH to local Docker Container)
+      5. cd /var/www/simplisafe.com/public_html
+      6.       7. drush cc all (clear routes cache)

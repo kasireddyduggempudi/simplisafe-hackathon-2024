@@ -1,0 +1,801 @@
+dex
+
+Quickstart Guide
+
+On this page
+
+Quickstart Guide
+
+In this tutorial, we'll install dex into a sample node.js webapp, and deploy it to your team's EKS cluster.
+
+WHO IS THIS TUTORIAL USEFUL FOR?
+
+A developer who understands the basic idea of containers, Docker, and Kubernetes, even if they haven't used them before.
+
+A developer who hasn't already used dex before. If you've already used it successfully, this will likely be too basic for you.
+
+Any developer, regardless of experience with node.js. Even though this tutorial uses node.js/TypeScript, dex is platform agnostic, so you don't need to have node.js experience for this workshop.
+
+Prerequisites
+
+Ensure you have installed dx and prerequisites (the command runner for dex).
+
+You should have a basic understanding of what these tools are:
+
+Containers
+
+Docker
+
+Kubernetes
+
+Clone the dex-tutorial repo
+
+We have an example project which is a "vanilla" node.js/TypeScript "hello world" web app, and has not been "dex-ified" yet.
+
+git clone git@github.com:simplisafe/dex-tutorial.git
+
+Get a feel for how the app works
+
+Let's just play with the tutorial app and see how it works without dex.
+
+First, let's build and run the app locally using idiomatic npm commands:
+
+# Installs all the dependencies of this app,
+
+# as defined in its package.json
+
+npm install
+
+
+
+# Compiles TypeScript
+
+npm run build
+
+
+
+# Runs the entrypoint
+
+npm run start
+
+Oops! You probably got an error about missing environment variables. Like most well-designed apps these days, this app follows 12-factor principles, and uses environment variables for config. So far, we haven't done anything to provide those env variables in our current shell, so the app crashed loudly, with a helpful error message (as it should).
+
+Let's set the expected environment variables from the repo's .env file, and then re-run the app:
+
+# Read and export the variables in .env
+
+set -a; source .env; set +a
+
+
+
+# Restart the app
+
+npm run start
+
+There we go; we should have just seen some nice JSON logs (the app is using otel-winston-logger for logging) indicating the app has started up.
+
+Now the app should be running at http://localhost:4999. Open it up in a browser to check it out; it should be a white page with the title "Hello World", along with some values of config variables, just to demonstrate that they can be plumbed through the app.
+
+Before we continue, let's hit CTRL-C to stop the app.
+
+Debugging
+
+This repo has .vscode/launch.json and .vscode/tasks.json files included, which configure and the default action to compile and run the app in the debugger. If you're using vscode, you can give it a shot:
+
+Open src/server.ts
+
+Put a breakpoint in the startup() function
+
+Start the process with debugging by pressing F5 or using Run -> Start Debugging from the top menu
+
+The debugger should have stopped at the breakpoint
+
+Press "Continue" (the forward arrow icon) in the debugger panel to allow the app to run
+
+Verify the app is running at http://localhost:4999.
+
+HOW DID THE .ENV FILE WORK WHEN DEBUGGING?
+
+When using the debugger, you didn't have to set the environment variables manually; this is because in the .vscode/launch.json, there's a envFile property set pointing at the .env file, which causes it to load environment variables before starting the process.
+
+A bit of cleanup
+
+Before we go further, let's delete the environment variables we created, so we won't be confused about where these are being set in future steps.
+
+unset SOME_PROPERTY
+
+unset DATABASE_USERNAME
+
+unset DATABASE_PASSWORD
+
+Cool, now let's install dex!
+
+Installing dex into your project
+
+Open your terminal, navigate to your project's root directory, and run:
+
+dx install-dex
+
+Inspect your project layout. Notice that you now have a new directory: dex. This directory contains a node.js module with a package.json and package-lock.json (standard node.js package definition files). They reference a specific version of the dex library, and should be committed to your git repo; which gives you control over when you upgrade dex.
+
+The directory will also contain a node_modules directory, which should NOT be committed to source control (the file dex/.gitignore prevents this). When you commit this project to source control, and someone else pulls it down, running any dx command will automatically restore the node_modules directory.
+
+Learning about dx
+
+You can quickly find commands and arguments for dx commands. Here's how to show all commands you can run with dx:
+
+# List all commands available in this project
+
+dx ls
+
+Note that this shows the three types of commands for dx:
+
+Project-defined commands: Commands that are defined specifically for this project. They do things like call platform specific programs to build/run your app (we'll learn more about them in this tutorial)
+
+dex library commands: Built-in commands that operate on containers, and apply to all projects.
+
+dx CLI commands: Commands that are built into dx (the CLI) as opposed to the dex library version that's installed in the project. These are all about installing dex and managing kubepacks.
+
+We can also learn about any command with the --help flag. For example, lets look at the available options for dx config:
+
+dx config --help
+
+Generate scaffolding
+
+dex can scaffold files for your project (i.e. generate boilerplate such as config files, manifests, etc):
+
+dx scaffold
+
+This will ask you a series of questions about your team, project, and AWS account roles, and then generate a bunch of files in your dex directory. These will include:
+
+A config directory for environment-defining config files
+
+A commands directory, for project-defined commands
+
+A manifests directory for your project's kubernetes manifests
+
+A Dockerfile that is specific for the platform you select
+
+.vscode configuration to support dex config file JSON schemas
+
+.gitignore and .dockerignore entries for dex-related files and directories
+
+It will also generate a config file in your home directory: ~/.dexrc which contains mappings of AWS account IDs to the SAML role you use when accessing the account.
+
+Checking your configuration
+
+Let's check out the starter config files that just got generated for you in dex/config:
+
+dex/config
+
+├── dev.yaml
+
+├── feature.yaml
+
+├── prd.yaml
+
+├── project.yaml
+
+├── qa.yaml
+
+└── stg.yaml
+
+These files each define an "environment" in dex. Let's look at an example; open up dex/config/qa.yaml:
+
+dex/config/qa.yaml
+
+# This config file defines the environment 'qa', which inherits from project.yaml.
+
+# This is intended to be a shared integration environment, where commits from the main git branch
+
+# are immediately deployed.
+
+
+
+# This environment uses the 'mainBranch' generator in order to create container image tags that
+
+# incorporate the build number and git commit.
+
+
+
+# To tell dex to use this environment, set DEX_ENV=qa
+
+
+
+apps:
+
+  main:
+
+    aws:
+
+      accountEnv: "qa"
+
+    containerImage:
+
+      tag: "@generator mainBranch.tag()"
+
+    kubernetes:
+
+
+
+      # This property allows you to define arbitrary values that can be transcluded into your kubernetes
+
+      # manifests at deployment time.
+
+      values: {}
+
+
+
+    # This property allows you to define environment variables that can be injected into your
+
+    # container at runtime (or when running locally in docker).
+
+    env:
+
+      SOME_ENV_VAR: "Environment variable in qa"
+
+
+
+    # This property allows you to define arbitrary config files that can be automatically injected
+
+    # into your container at runtime (or when running locally in docker).
+
+    configFile:
+
+      # This property can contain any arbitrary structure, and can reference secrets.
+
+      data:
+
+        someProperty: "Config value for qa"
+
+Note that this is a YAML file which defines a tree of properties for one or more apps. Within each app, it contains configuration of an app, from a high-level, developer-centric perspective (how to build it, deploy it, provide it with runtime configuration, etc).
+
+WHAT IS "APPS.MAIN"?
+
+dex config supports multiple apps within a repo (i.e. so you can create a monorepo), but most dex repos just have one app with the default name main.
+
+The file dex/config/qa.yaml defines the environment qa, which in this example, deploys to the AWS account 0123456789.
+
+WHAT DO YOU MEAN BY "ENVIRONMENT" IN DEX?
+
+In dex, environments are defined as files in the dex/config directory (e.g. qa.yaml, stg.yaml), and can inherit from one another (e.g. dev.yaml inherits from qa.yaml).
+
+You can have multiple dex environments that all live in the same AWS account. In this project, both qa and dev are in the same AWS account:
+
+The qa environment is a shared, static integration environment. It would probably reflect the latest version of your app from the main branch.
+
+The dev environment is an "ephemeral" environment that an individual developer can use to test work in progress. In kubernetes, the app's namespace is suffixed with the developer name, to keep it isolated from other developers.
+
+The environment that will be used when you run dx commands is determined by the environment variable DEX_ENV, and the default value locally is dev.
+
+That means that for this tutorial, we'll be running all commands against the dev environment. When we deploy to kubernetes, we'll get our own private namespace: dex-tutorial-{your username}.
+
+Now let's check the actual coalesced configuration tree for the dev environment (which combines dev.yaml, qa.yaml, and project.yaml):
+
+dx config
+
+This will print your configuration for the current environment in a nice, readable format, along with generated and default values, with some helpful context information about where certain values came from.
+
+Notice at the top it tells us: Config for DEX_ENV: dev. This verifies the current dex "environment" is dev.
+
+What's wrong with just using .env files?
+
+Similar to the .env file, dex config files allow you to define runtime configuration. However, dex configuration has some big advantages over .env files:
+
+You can run locally in docker, natively, or in Kubernetes, but you only have to define your runtime config in one place
+
+You can define multiple environments using multiple dex config files, with an inheritance structure to reduce duplication
+
+You can reference secrets from AWS Parameter store
+
+You can define configuration values dynamically with generator expressions
+
+Move configuration into dex config files
+
+As we've learned, the sample app expects all configuration to be provided via environment variables, so we don't need to make any changes to the app itself.
+
+Let's translate the .env file into dex configuration, into the apps.main.env section of the config tree.
+
+We want to have the same runtime configuration between the qa and dev environments, so we'll update dex/config/qa.yaml and copy in the environment variables from .env:
+
+dex/config/qa.yaml
+
+apps:
+
+  main:
+
+    # ...
+
+    env:
+
+      SOME_PROPERTY: 'some property value'
+
+      DATABASE_USERNAME: 'fake username from config'
+
+      DATABASE_PASSWORD: 'fake password from config'
+
+WHAT IS THAT "CONFIGFILE" SECTION?
+
+When you ran dx scaffold, it created the dex/config files with both apps.main.env and apps.main.configFile sections. This is because dex has two ways to inject runtime configuration into your app:
+
+It can set environment variables
+
+It can write out a JSON config file and mount it in your container
+
+Since our dex-tutorial app uses environment variables (not a JSON config file) for runtime configuration, we'll just use the apps.main.env section. You can delete the whole apps.main.configFile section.
+
+Then, lets re-run dx config to check that the env section is showing up:
+
+dx config
+
+Once you've verified the env section is correctly showing up, let's delete the .env file from the repo to keep things clean.
+
+Building and running your container locally
+
+Now we're ready to build your container and run it locally.
+
+The repo already has a Dockerfile; open it up and check it out. Then, use it to build your app's container image by running:
+
+dx build
+
+Then let's run it:
+
+dx run
+
+In your terminal, you should see the same JSON logging output from the app. Let's verify the app looks the same as it did when we were running it natively: http://localhost:4999.
+
+WHAT IS DEX DOING IN THERE?
+
+Under the hood, the dx run command called docker run, passing all the configuration variables as -e arguments.
+
+If you had used the configFile feature in your config, dex would have additionally written a config file to .config/config.json, and mounted it in your container.
+
+Cool, the app is running in Docker, and you can see the config values we added!
+
+Building and running natively
+
+Running in Docker is great, but you may also want to run natively. Since dex doesn't really know anything about running apps natively (it's centered around containers), we need to create a project-defined command to override the default dex build and run command implementations, and add a few lines of code to call the node-specific build and run commands.
+
+Luckily, since node.js is a top-tier platform for dex, the scaffolding command we ran earlier has already generated a node.js overrides for the build and run commands!
+
+Let's take a look at the build command: dex/commands/build.ts. Note that we've defined a --host flag, and that the command() function has an if block switching on the args.host parameter. This means if you run dx build --host, the code inside that if block will be called. As you can see, they just shell out to the idiomatic node.js build command: npm run build.
+
+Lets try it:
+
+dx build --host
+
+Cool, we ran the TypeScript compilation step via dx!
+
+Now, check out the dex/commands/run.ts file. It's pretty similar, except it calls a couple dex APIs before running the idiomatic node.js start command (npm run start):
+
+await renderConfigFiles();
+
+await loadEnv();
+
+These two functions (via the dex TypeScript API) help make config from your dex config files available to your app when running natively.
+
+renderConfigFiles() renders out a JSON config file and/or .env file to load into your app for runtime configuration.
+
+loadEnv() loads the environment variables in your config env section into the current process, so the will be inherited by the child process when running npm run start.
+
+Next, lets run the app natively. The exact same principles have been applied to the dex/commands/run.ts project-defined commands, so it also has a --host flag:
+
+dx run --host
+
+You should see the app running just as before, with the config values visible in a browser.
+
+Enable native debugging
+
+Cool, your app is now using configuration from dex both in Docker, and natively. But what about when using the debugger?
+
+Before we debug locally, we want to make sure our app has the latest version of its runtime configuration from the apps.main.env property in our dex config files. When we're running via the dx run command, the config gets rendered automatically. If we're using the debugger in vscode, we'll need to explicitly call the dx render-config command each time we change a runtime config value.
+
+Good news: we can do this automatically! Let's create some vscode "tasks" that we can trigger before debugging to compile typescript and call dx render-config automatically:
+
+.vscode/tasks.json
+
+{
+
+    "version": "2.0.0",
+
+    "tasks": [
+
+        {
+
+      "label": "tsc: build",
+
+            "type": "typescript",
+
+            "tsconfig": "src/tsconfig.release.json",
+
+            "problemMatcher": [
+
+                "$tsc"
+
+            ]
+
+        },
+
+        {
+
+            "label": "dx: render-config",
+
+            "type": "shell",
+
+            "command": "dx render-config",
+
+            "problemMatcher": []
+
+        },
+
+        {
+
+            "label": "pre-run",
+
+            "dependsOn": [
+
+                "dx: render-config",
+
+                "tsc: build"
+
+            ]
+
+        }
+
+    ]
+
+}
+
+Now, let's update our .vscode/launch.json to configure the debugger to use the pre-run task we just created, and use the .env file it creates:
+
+.vscode/launch.json
+
+{
+
+    "version": "0.2.0",
+
+    "configurations": [
+
+        {
+
+            "type": "node",
+
+            "request": "launch",
+
+            "name": "Launch Program",
+
+            "skipFiles": [
+
+                "<node_internals>/**"
+
+            ],
+
+            "preLaunchTask": "pre-run",
+
+            "program": "${workspaceFolder}/dist/server.js",
+
+            "envFile": "${workspaceFolder}/.config/.env",
+
+            "outFiles": [
+
+                "${workspaceFolder}/**/*.js"
+
+            ],
+
+            "console": "integratedTerminal"
+
+        }
+
+    ]
+
+}
+
+OK, now lets run the app via the debugger. Put a breakpoint in the startup() method of src/server.ts, and select Run -> Start Debugging in the vscode menu.
+
+If your breakpoint gets hit, you've got it working!
+
+Adding secrets
+
+In the sample repo, we have config values for DATABASE_USERNAME and DATABASE_PASSWORD, for which real credentials should obviously not be put into source control.
+
+Let's create two parameters in AWS Systems Manager Parameter Store, and store values for these properties there.
+
+Log into the AWS console for your team's QA account
+
+In the top navigation search bar, type "Parameter Store"
+
+In the resulting search dropdown, under "Features", select "Parameter Store" (which is a sub-feature of Systems Manager)
+
+Click the "Create parameter" button at the top of the "My parameters" table
+
+For Name, type /dex-tutorial/{your-username}/database/username
+
+For Type, select "SecureString"
+
+For value, enter "fake username from secret"
+
+Repeat the process to create another secret for /dex-tutorial/{your-username}/database/password
+
+Using secrets in configuration
+
+Next, let's replace the hard-coded secret values in dex/config/qa.yaml with references to these parameter store secrets:
+
+dex/config/qa.yaml
+
+...
+
+
+
+  env:
+
+    SOME_PROPERTY: 'some property value'
+
+    DATABASE_USERNAME: '@secret /dex-tutorial/{your-username}/database/username'
+
+    DATABASE_PASSWORD: '@secret /dex-tutorial/{your-username}/database/password'
+
+Then, lets run dx config again to check that the secrets have been read:
+
+dx config
+
+Note that the values of the secrets now show in red as:
+
+env:
+
+  DATABASE_USERNAME: (unavailable) (@secret /dex-tutorial/gracehopper/database/username, runtime only)
+
+  DATABASE_PASSWORD: (unavailable) (@secret /dex-tutorial/gracehopper/database/password, runtime only)
+
+This is because, by default, dex will not pull secrets from AWS; this is to force you to think carefully about whether the secrets are appropriate to have on a local developer laptop.
+
+IMPORTANT
+
+Before you use any real secrets for local development, it's really important to read our doc section on runtime secrets, which will help you choose the right way to manage secrets on a local laptop.
+
+In this case, we're going to pretend that we've verified these secrets are safe to download to our laptops. To do this, we can use the command:
+
+dx cache-secrets
+
+(which will pull the secrets into a local cache file at: .tmp/offline.json, but this is transparent to you).
+
+Then, re-run the dx config command again:
+
+dx config
+
+Now the secrets are showing up in yellow (indicating that they're being pulled dynamically), and masked. If you want to validate the actual values:
+
+# -s | --show-secrets
+
+dx config -s
+
+Now let's run the app and see how it's working with the secrets:
+
+dx run
+
+Go ahead and open a browser to http://localhost:4999, and verify that the "secrets" are showing up.
+
+Let's try the same thing natively:
+
+dx run --host
+
+Nice! Secrets are now being provided via 12-factor goodness!
+
+Setting up your kubernetes deployment
+
+It's time to deploy our app to Kubernetes!
+
+dex uses standard Kubernetes "manifests": YAML/JSON files that describe your app in terms of high-level Kubernetes objects (e.g. Deployment, Service, Ingress, etc). These manifests go in dex/manifests by default, and our project got a boilerplate Deployment.yaml manifest when we called dx scaffold.
+
+Go ahead and take a look at dex/manifests/Deployment.yaml (though you don't need to make any changes to it now).
+
+WHAT IS A DEPLOYMENT?
+
+This is a sort of wrapper object which defines the Pod that will house your application container, configuration and secret injection, health checks, resource limits, and other features of managing your container at runtime. The Deployment wrapper manages how your application is actually deployed (i.e. zero-downtime rollout as new versions are deployed) and its scaling properties (i.e. number of pod "replicas" that should be deployed).
+
+Choosing your ingress
+
+Configuring Ingress (how your app is exposed outside of the cluster) along with DNS and TLS certs is complicated in Kubernetes, but dex takes care of this for you. Open up your dex/config/project.yaml, and check out apps.main.kubernetes.ingressType:
+
+dex/config/project.yaml
+
+apps:
+
+  main:
+
+    # ...
+
+    kubernetes:
+
+      # TODO: Put your application port here.
+
+      # Consider choosing a high, unusual port number so that your app's port
+
+      # will be unique when running lots of containers port-mapped on localhost.
+
+      containerPort: 4999
+
+
+
+      # This allows you to choose the way your application is exposed
+
+      ingressType: "internalIngressAndService"
+
+containerPort tells dex and Kubernetes what port your container will be listening on. This has to match the port your code actually uses!
+
+ingressType is an enumeration of options for all the valid ways to expose your service (e.g. internal, external, both internal and external).
+
+WHY A UNIQUE, HIGH PORT NUMBER?
+
+For two reasons:
+
+Linux default security settings prohibit non-root apps from binding to ports under 1024.
+
+When you're running a bunch of apps natively, only one app can bind to a specific port. Having them unique per service makes local development a lot easier.
+
+We're ready to deploy!
+
+Let's go ahead and deploy to our dev environment!
+
+REMINDER
+
+When we deploy to the dev environment, it's going to create an isolated environment that is suffixed with your username, so you can deploy without fear!
+
+# Push your container image to ECR
+
+dx push
+
+
+
+# Deploy to Kubernetes
+
+dx deploy
+
+
+
+# OR, do dx build, push, deploy all in one shot:
+
+# The -k (--kube) flag means run in Kubernetes!
+
+dx run -k
+
+Check out your app
+
+If all went well, the dx deploy (or dx run -k) command printed out the URL of your new deployment. Lets put this link in a browser and check out your app!
+
+open https://dex-tutorial-dev-gracehopper.eks.int.us-east-1.qa.devops.ss42.net
+
+HOW DID I GET HTTPS WORKING SO EASILY?
+
+Note that HTTPS works, using a wildcard certificate that has already been configured for your EKS cluster!
+
+Wildcard certificates are allowed on a domain that doesn't have the word "simplisafe" in it, so we use this for ephemeral developer environments and feature branch environments.
+
+In all other environments, such as shared integration environments (i.e. in qa), or in stg or prd, non-wildcard certificates for your app's specific hostname will be automatically created by dex at deployment time.
+
+Looking at your app in Kubernetes
+
+LOGGING INTO KUBERNETES
+
+The previous command dx deploy logged you into kubernetes automatically using the AWS credentials specified in your dex config file for the current environment. Now you can run commands with kubectl in the same context that dex ran its commands.
+
+You can also log in explicitly with dx cluster-login.
+
+At this point, you can check out your app using kubectl (or your favorite kubernetes UI, such as k9s or OpenLens:
+
+kubectl get deploy
+
+You should see your deployment:
+
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+
+dex-tutorial       1/1     1            1           2m
+
+NOTE
+
+Because we used dx deploy in the dev environment, you should see your username appended to the name of your app. This is how dex allows you to create ephemeral developer environments, and is useful for you to test your app in a production-like environment.
+
+You can drill down into pods, services, and ingresses as well:
+
+kubectl get pod
+
+NAME                             READY   STATUS    RESTARTS   AGE
+
+dex-tutorial-778fd944c8-6bznk    1/1     Running   0          2m
+
+TIP
+
+kubectl is fairly easy to learn, given that it has a few basic commands that operate similarly on most objects.
+
+Here's a nice tutorial: https://kubernetes.io/docs/reference/kubectl/overview/
+
+Check out your app in a browser!
+
+When you ran dx deploy, you may have noticed that it printed out a banner after a successful deployment with the URL of the app's ingress:
+
+Waiting for deployment "dex-tutorial" rollout to finish: 1 of 2 updated replicas are available...
+
+deployment "dex-tutorial" successfully rolled out
+
+
+
+   ┌───────────────────────────────────────────────────────────────────────────────┐
+
+   │                                                                               │
+
+   │   Your app should be available at:                                            │
+
+   │                                                                               │
+
+   │   https://dex-tutorial-dev-gracehopper.eks.int.us-east-1.qa.myteam.ss42.net   │
+
+   │                                                                               │
+
+   └───────────────────────────────────────────────────────────────────────────────┘
+
+
+
+Deployment completed successfully
+
+This is the external URL of your service, and was assigned to your app's ingress object. You can see this using kubectl:
+
+kubectl get ingress
+
+NAME           HOSTS                                                              ADDRESS                                                                            PORTS   AGE
+
+dex-tutorial   dex-tutorial-dev-gracehopper.eks.int.us-east-1.qa.devops.ss42.net  internal-ae5bce6007fab4501b3044669ee8c524-1482013065.us-east-1.elb.amazonaws.com   80      8d
+
+How does this Deployment have my username on it?
+
+So how did this deployment get a unique namespace and URL, each suffixed with your username? To answer this, lets take a quick peek at the dev environment config file: dex/config/dev.yaml:
+
+dex/config/dev.yaml
+
+inheritFrom: qa
+
+apps:
+
+  main:
+
+    containerImage:
+
+      tag: "@generator developer.tag()"
+
+    kubernetes:
+
+      namespace: "@generator developer.namespace()"
+
+      deleteAfterDays: 7
+
+The trick here is a dex feature called config generators. A generator is a bit of TypeScript code that can be used to generate config values dynamically, based on inputs such as environment variables.
+
+In this case, the scaffolding set up your dev environment using the developer generator, which reads from environment variables, determines that you're not a CI/CD server, and then generates a container image tag and Kubernetes namespace name based on the app name and your username.
+
+There's no magic here, and nothing special about how dex thinks about the dev environment versus other environments; it's just configuration that you ultimately control.
+
+NOTE
+
+Also note the deleteAfterDays property. This is what makes an environment ephemeral instead of static. Again: no magic!
+
+Cleaning up
+
+When you're done with your ephemeral environment, you can clean it up with:
+
+dx destroy
+
+That will delete all the objects you deployed, including the Ingress and Service, as well as the Deployment and any Pods it created.
+
+Next steps
+
+Congratulations! You've learned the basics of dex!
+
+When you work with dex on a real project, you'll want to learn more about these topics:
+
+Setting up CI/CD pipelines
+
+Creating tests
+
+Configuring runtime permissions for your app
+
+Learn about how secret injection works in Kubernetes
+
+You can always get support for dex in the slack channel #dex-support!

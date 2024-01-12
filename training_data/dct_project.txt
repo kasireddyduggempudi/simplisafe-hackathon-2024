@@ -1,0 +1,51 @@
+﻿DCT - Drupal to CommerceTools
+Project space for the DCT OMS Order form project. Our goal is replace the Order management, slicing functionality off from Ubercart.
+The project consists of a hosted iframe react application replacing the create order screen in Drupal. The react application uses Auth0 for authentication and those credentials are passed to the backend services in place of x-vid-token where required.
+Phases of the project
+Phase 1 (In progress):
+Accept phone orders entered via CSR’s and authorize payment to ready the order for fulfillment
+Orders continue to flow into Drupal and are considered authoritative for fulfillment
+As part of this we will enable:
+* Fetching products from Commercetools including:
+   * Components
+   * Systems
+   * Permits
+   * Service Plans
+   * Replacement parts
+   * Using products created in Drupal but using product sync to import into Commercetools
+* Fetching discount codes from Commercetools
+   * Using coupon codes created in Drupal but using promotion sync to load Commercetools
+* Implementing Zuora iframe in the React application for order authorization
+* UX/UI Improvements for order management
+* New customers are created in both Commercetools and Drupal
+   * Leads are inserted via ecomm-leads
+Phase 2 (Not exhaustive):
+* Orders continue to flow into Drupal but are not considered authoritative
+* Order edits are made to the Commercetools Order object and then flow down into Drupal
+   * Orders not present or updated after placement will be sync’d “just in time” to Commercetools
+* Order refunds are processed using Commercetools
+* Products are created in Commercetools
+   * Drupal will need products until reporting can be moved
+   * Prices are not considered authoritative for reporting purposes if we want to enable price testing
+* Promotions are created in Commercetools
+* Enable price testing and changes in Commercetools
+Phase 3 (High level, pending stakeholder sign-off):
+* Fulfillment is done via Order objects in Commercetools
+* Order splitting is handled with multiple shipments in Commercetools
+* Reporting can be done via BI data fed from Commercetools
+* Order data in Drupal is non-authoritative, products no longer need to be created in Drupal
+   * The First Order no longer sync’s orders to Drupal
+Repositories:
+simplisafe/eis-orders-frontend  - EIS Orders Frontend is our react application to be hosted inside Drupal. This interacts with the EIS/Ecomm apis to facilitate order creation and management
+simplisafe/eis-orders  - EIS Orders is a replacement for ecomm-orders which handles payments, pre-activation, TFO proxy, and order persistence / placement, converting the “cart” to an order
+simplisafe/ecomm-users-api  - Handles user management to bridge between Drupal and Commercetools. Is responsible for merging customer profiles between Drupal and Commercetools and adding user data to Commercetools
+Utilized Ecomm Services:
+simplisafe/ecomm-product-sync - Syncs products from Drupal to Commercetools. In phase two of our project, we’ll be turning this off and making Commercetools the source of product data for ecommerce
+simplisafe/eis-promotions  - Syncs promotions from Drupal to Commercetools. In phase two of our project, we’ll be turning this off and making Commercetools the source of promotions data for e-commerce including the creation and management of coupons
+simplisafe/ecomm-carts-api - Creates and manages carts which are converted to orders and via The First Order are deposited back into Drupal
+simplisafe/ecomm-promotions-api - The bridge between the frontend and Commercetools discounts. This service will enable querying for Discount Codes for the CRM to enable typeahead
+simplisafe/ecomm-orders  - Used to convert carts to orders and start the sync process for orders into Drupal
+simplisafe/simplisafe.com - The main repository that runs the OMS and the former e-commerce website.
+simplisafe/ecomm-payments - Responsible for creating payment profiles and rendering the payment collection application within our frontend application. Integrates with Zuora
+simplisafe/ecomm-leads - Used to insert new leads into the ss_leads table as well as
+simplisafe/subspace-transceiver for deduplication and Braze
